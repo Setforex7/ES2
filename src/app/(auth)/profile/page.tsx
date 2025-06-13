@@ -1,4 +1,4 @@
-"use client"; // Adicionado "use client" se houver interatividade futura, embora não seja estritamente necessário para este layout estático
+"use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -21,17 +21,15 @@ import {
 import { User, Settings, Activity, Lock, Edit3 } from 'lucide-react';
 import { cn } from "@/lib/utils"; // Para gerir classes
 
-// Assumindo que esta página será renderizada dentro do teu RootLayout que já tem Navbar e Footer
 export default function ProfilePage() {
-  // Dados de exemplo - idealmente viriam de um estado, props ou API
   const userProfile = {
     fullName: "Diogo Barros",
     email: "barros@exemplo.com",
-    bio: "Medio centro e rabolho", // Mantive a tua descrição original :)
+    bio: "Medio centro e rabolho", 
     location: "Sesimbra, Portugal",
     username: "Barros",
-    avatarSrc: "https://github.com/shadcn.png", // Imagem de exemplo
-    avatarFallback: "DB", // Fallback para o Avatar
+    avatarSrc: "https://github.com/shadcn.png",
+    avatarFallback: "DB", 
     activityLog: [
       { date: "Há 1 dia", action: "Atualizou a foto de perfil." },
       { date: "Há 3 dias", action: "Completou o desafio 'Caça ao Tesouro'." },
@@ -42,8 +40,8 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto my-10 px-4 sm:px-6 lg:px-8">
-      <Card className="max-w-4xl mx-auto shadow-lg rounded-xl border border-border/60"> {/* Adicionada borda sutil e aumentado rounded */}
-        <CardHeader className="p-6 sm:p-8 bg-card rounded-t-xl"> {/* Arredondado no topo se o card tiver borda */}
+      <Card className="max-w-4xl mx-auto shadow-lg rounded-xl border border-border/60"> 
+        <CardHeader className="p-6 sm:p-8 bg-card rounded-t-xl">
           <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
             <Avatar className="w-24 h-24 sm:w-28 sm:h-28 border-4 border-primary/80 shadow-md">
               <AvatarImage src={userProfile.avatarSrc} alt="Foto de Perfil do Utilizador" />

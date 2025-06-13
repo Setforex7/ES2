@@ -1,24 +1,120 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// Define o gerador do cliente Prisma e o provider do banco de dados.
+// O "prisma-client-js" gera o cliente TypeScript.
+// O "binaryTargets" é necessário para ambientes como o Vercel.
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
+// Configuração da fonte de dados.
+// Estamos a usar PostgreSQL e a obter a URL da variável de ambiente.
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+// Enum para definir os papéis (roles) dos utilizadores.
+// Isto permite diferenciar utilizadores normais de administradores/criadores de quizzes.
+enum Role {
+  USER
+  ADMIN
+}
+
+// Modelo de Utilizador (User)
+// Armazena as informações básicas dos utilizadores da aplicação.
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             Int           @id @default(autoincrement())
+  email          String        @unique
+  name           String?
+  password       String
+  role           Role          @default(USER) // Papel do utilizador, por defeito é USER.
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  // Relações
+  createdQuizzes Quiz[]        @relation("CreatedQuizzes") // Quizzes que este utilizador criou.
+  quizAttempts   QuizAttempt[] // Tentativas de quiz feitas por este utilizador.
+}
+
+// Modelo do Quiz
+// Representa um quiz individual com um título, descrição e o seu criador.
+model Quiz {
+  id           Int       @id @default(autoincrement())
+  title        String
+  description  String?
+  isActive     Boolean   @default(true)
+  winnersCount Int       @default(0) // <-- ADICIONE ESTA LINHA
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+// Chave estrangeira e relação com o criador (User)
+  creatorId Int
+  creator   User      @relation("CreatedQuizzes", fields: [creatorId], references: [id])
+  // Relações
+  questions Question[]
+  attempts  QuizAttempt[]
+}
+
+// Modelo da Pergunta (Question)
+// Representa uma única pergunta dentro de um quiz.
+model Question {
+  id   Int    @id @default(autoincrement())
+  text String
+
+  // Chave estrangeira e relação com o Quiz
+  quizId Int
+  quiz   Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade) // Se um quiz for apagado, as suas perguntas também são.
+
+  // Relações
+  options Option[] // Lista de opções de resposta para esta pergunta.
+  answers Answer[] // Respostas dadas a esta pergunta em várias tentativas.
+}
+
+// Modelo da Opção de Resposta (Option)
+// Representa uma das possíveis respostas para uma pergunta.
+model Option {
+  id        Int     @id @default(autoincrement())
+  text      String
+  isCorrect Boolean @default(false) // Indica se esta é a resposta correta.
+
+  // Chave estrangeira e relação com a Pergunta (Question)
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade) // Se uma pergunta for apagada, as suas opções também são.
+
+  // Relações
+  selectedInAnswers Answer[] // Registos de quando esta opção foi selecionada como resposta.
+}
+
+// Modelo da Tentativa de Quiz (QuizAttempt)
+// Regista a tentativa de um utilizador de completar um quiz.
+model QuizAttempt {
+  id          Int       @id @default(autoincrement())
+  score       Int // Pontuação obtida nesta tentativa.
+  startedAt   DateTime  @default(now())
+  completedAt DateTime? // Fica nulo até o quiz ser concluído.
+
+  // Chaves estrangeiras e relações com User e Quiz
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId Int
+  quiz   Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  // Relações
+  answers Answer[] // A lista de respostas dadas nesta tentativa.
+
+  @@unique([userId, quizId, startedAt]) // Garante que uma tentativa é única por utilizador, quiz e tempo de início.
+}
+
+// Modelo da Resposta (Answer)
+// Associa a resposta de um utilizador a uma pergunta específica numa tentativa de quiz.
+model Answer {
+  id Int @id @default(autoincrement())
+
+  // Chaves estrangeiras e relações
+  quizAttemptId    Int
+  quizAttempt      QuizAttempt @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+  questionId       Int
+  question         Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOptionId Int
+  selectedOption   Option      @relation(fields: [selectedOptionId], references: [id])
 }
